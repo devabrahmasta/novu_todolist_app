@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
-import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/providers/category_providers.dart';
 import '../../../task/domain/entities/task_entity.dart';
 import '../../../task/presentation/providers/task_providers.dart';
@@ -25,17 +24,70 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  final _sheetController = DraggableScrollableController();
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    _sheetController.addListener(_onSheetChanged);
+  }
+
+  void _onSheetChanged() {
+    if (!_sheetController.isAttached) return;
+    final size = _sheetController.size;
+    if (size > 0.58 && _calendarFormat == CalendarFormat.month) {
+      setState(() => _calendarFormat = CalendarFormat.week);
+    } else if (size < 0.48 && _calendarFormat == CalendarFormat.week) {
+      setState(() => _calendarFormat = CalendarFormat.month);
+    }
+  }
+
+  @override
+  void dispose() {
+    _sheetController.removeListener(_onSheetChanged);
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  String _formatSelectedDate(DateTime date) {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     final selectedDay = ref.watch(selectedDateProvider);
     final taskAsync = ref.watch(taskListNotifierProvider);
     final categoryAsync = ref.watch(categoryListNotifierProvider);
 
-    // Build event map for dot markers
     final allTasks = taskAsync.valueOrNull ?? [];
+
+    // Event map for dot markers
     final eventMap = <DateTime, List<TaskEntity>>{};
     for (final task in allTasks) {
       if (task.dueDate != null && task.status != TaskStatus.archived) {
@@ -51,72 +103,177 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // Filter tasks for selected date
     final tasksForDate = allTasks.where((t) {
       if (t.status == TaskStatus.archived) return false;
-      if (t.dueDate == null) {
-        // Show tasks with no due date on today only
-        return isSameDay(selectedDay, DateTime.now());
-      }
+      if (t.dueDate == null) return isSameDay(selectedDay, DateTime.now());
       return isSameDay(t.dueDate!, selectedDay);
     }).toList();
 
-    // Sort: pending first
+    // Sort: completed→bottom, then timeOfDay slot, then dueTime, then createdAt
     tasksForDate.sort((a, b) {
-      if (a.status == TaskStatus.completed &&
-          b.status != TaskStatus.completed) {
-        return 1;
+      final aCompleted = a.status == TaskStatus.completed;
+      final bCompleted = b.status == TaskStatus.completed;
+      if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+      final slotCompare = a.timeOfDay.index.compareTo(b.timeOfDay.index);
+      if (slotCompare != 0) return slotCompare;
+      if (a.dueTime != null && b.dueTime != null) {
+        final aMin = a.dueTime!.hour * 60 + a.dueTime!.minute;
+        final bMin = b.dueTime!.hour * 60 + b.dueTime!.minute;
+        return aMin.compareTo(bMin);
       }
-      if (a.status != TaskStatus.completed &&
-          b.status == TaskStatus.completed) {
-        return -1;
-      }
-      return 0;
+      if (a.dueTime != null) return -1;
+      if (b.dueTime != null) return 1;
+      return a.createdAt.compareTo(b.createdAt);
     });
 
-    // Category lookup
     final categories = categoryAsync.valueOrNull ?? [];
     final categoryMap = {for (final c in categories) c.id: c};
 
     return Scaffold(
-      backgroundColor: context.novuColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── App Bar ──
-            _CalendarAppBar(),
-
-            // ── Calendar ──
-            _CalendarWidget(
-              focusedDay: _focusedDay,
-              selectedDay: selectedDay,
-              calendarFormat: _calendarFormat,
-              eventMap: eventMap,
-              onDaySelected: (selected, focused) {
-                ref.read(selectedDateProvider.notifier).setDate(selected);
-                setState(() => _focusedDay = focused);
-              },
-              onFormatChanged: (format) {
-                setState(() => _calendarFormat = format);
-              },
-              onPageChanged: (focused) {
-                setState(() => _focusedDay = focused);
-              },
+      backgroundColor: colors.bg,
+      body: Stack(
+        children: [
+          // ── BACKGROUND: AppBar + Calendar ──
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CalendarAppBar(),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: _CalendarWidget(
+                    focusedDay: _focusedDay,
+                    selectedDay: selectedDay,
+                    calendarFormat: _calendarFormat,
+                    eventMap: eventMap,
+                    onDaySelected: (selected, focused) {
+                      ref.read(selectedDateProvider.notifier).setDate(selected);
+                      setState(() => _focusedDay = focused);
+                    },
+                    onFormatChanged: (format) {
+                      setState(() => _calendarFormat = format);
+                    },
+                    onPageChanged: (focused) {
+                      setState(() => _focusedDay = focused);
+                    },
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            // ── Schedule Panel ──
-            Expanded(
-              child: _SchedulePanel(
-                selectedDay: selectedDay,
-                tasks: tasksForDate,
-                categoryMap: categoryMap,
-                onToggle: (taskId) {
-                  ref
-                      .read(taskListNotifierProvider.notifier)
-                      .completeTask(taskId);
-                },
-                onAddTask: () => showCreateTaskSheet(context),
-              ),
-            ),
-          ],
-        ),
+          // ── FOREGROUND: Draggable Schedule Panel ──
+          DraggableScrollableSheet(
+            controller: _sheetController,
+            initialChildSize: 0.50,
+            minChildSize: 0.28,
+            maxChildSize: 0.92,
+            snap: true,
+            snapSizes: const [0.28, 0.50, 0.92],
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Drag handle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+
+                    // Schedule header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Schedule',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineLarge,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _formatSelectedDate(selectedDay),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: colors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => showCreateTaskSheet(context),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: colors.surface2,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.add_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Task list — uses scrollController from DraggableScrollableSheet
+                    Expanded(
+                      child: tasksForDate.isEmpty
+                          ? _EmptySchedule()
+                          : ListView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              itemCount: tasksForDate.length,
+                              itemBuilder: (context, index) {
+                                final task = tasksForDate[index];
+                                final category = task.categoryId != null
+                                    ? categoryMap[task.categoryId!]
+                                    : null;
+                                return ScheduleTaskCard(
+                                  task: task,
+                                  category: category,
+                                  onToggle: () => ref
+                                      .read(taskListNotifierProvider.notifier)
+                                      .completeTask(task.id),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -210,7 +367,7 @@ class _CalendarWidget extends StatelessWidget {
         // ── Header style ──
         headerStyle: HeaderStyle(
           titleCentered: true,
-          formatButtonVisible: true,
+          formatButtonVisible: false,
           formatButtonDecoration: BoxDecoration(
             border: Border.all(color: colors.border),
             borderRadius: BorderRadius.circular(12),
@@ -286,147 +443,6 @@ class _CalendarWidget extends StatelessWidget {
         // ── Row height ──
         rowHeight: 46,
         daysOfWeekHeight: 28,
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SCHEDULE PANEL
-// ═══════════════════════════════════════════════════════════════
-
-class _SchedulePanel extends StatelessWidget {
-  const _SchedulePanel({
-    required this.selectedDay,
-    required this.tasks,
-    required this.categoryMap,
-    required this.onToggle,
-    required this.onAddTask,
-  });
-
-  final DateTime selectedDay;
-  final List<TaskEntity> tasks;
-  final Map<String, CategoryEntity> categoryMap;
-  final ValueChanged<String> onToggle;
-  final VoidCallback onAddTask;
-
-  String _formatSelectedDate() {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${weekdays[selectedDay.weekday - 1]}, '
-        '${months[selectedDay.month - 1]} ${selectedDay.day}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.novuColors;
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
-      ),
-      child: Column(
-        children: [
-          // ── Drag handle ──
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: colors.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Header row ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Schedule', style: textTheme.headlineLarge),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatSelectedDate(),
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: onAddTask,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: colors.surface2,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // ── Task list ──
-          Expanded(
-            child: tasks.isEmpty
-                ? _EmptySchedule()
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = tasks[index];
-                      final category = task.categoryId != null
-                          ? categoryMap[task.categoryId!]
-                          : null;
-
-                      return ScheduleTaskCard(
-                        task: task,
-                        category: category,
-                        onToggle: () => onToggle(task.id),
-                      );
-                    },
-                  ),
-          ),
-        ],
       ),
     );
   }

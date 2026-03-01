@@ -13,7 +13,11 @@ class TaskLocalDataSource {
 
   /// Get all tasks (with their subtasks).
   Future<List<TaskModel>> getAllTasks() async {
-    final rows = await _db.query('tasks');
+    final rows = await _db.query(
+      'tasks',
+      orderBy:
+          'status ASC, timeOfDay ASC, dueTimeHour ASC, dueTimeMinute ASC, createdAt ASC',
+    );
     final tasks = <TaskModel>[];
     for (final row in rows) {
       final task = TaskModel.fromMap(row);
@@ -39,8 +43,13 @@ class TaskLocalDataSource {
     final end = start.add(const Duration(days: 1));
     final rows = await _db.query(
       'tasks',
-      where: 'dueDate >= ? AND dueDate < ?',
-      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      where: 'dueDate >= ? AND dueDate < ? AND status != ?',
+      whereArgs: [
+        start.millisecondsSinceEpoch,
+        end.millisecondsSinceEpoch,
+        TaskStatus.archived.index,
+      ],
+      orderBy: 'status ASC, timeOfDay ASC, dueTimeHour ASC, dueTimeMinute ASC',
     );
     return rows.map(TaskModel.fromMap).toList();
   }

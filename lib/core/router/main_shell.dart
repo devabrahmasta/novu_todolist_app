@@ -66,7 +66,7 @@ class _BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.novuColors;
     final items = [
-      (Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'Tasks'),
+      (Icons.library_add_check_outlined, Icons.library_add_check, 'Tasks'),
       (Icons.calendar_today_outlined, Icons.calendar_today_rounded, 'Calendar'),
       (Icons.folder_outlined, Icons.folder_rounded, 'Projects'),
       (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),

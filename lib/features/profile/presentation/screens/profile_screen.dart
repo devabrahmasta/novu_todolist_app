@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:novu_todolist_app/features/profile/presentation/widgets/settings_tiles.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -348,14 +349,14 @@ class _GeneralSettings extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.notifications_none_rounded,
                 iconColor: const Color(0xFFFFD166),
                 title: 'Notifications',
                 onTap: () {},
               ),
               Divider(color: colors.border, height: 1, indent: 56),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.palette_outlined,
                 iconColor: AppColors.primary,
                 title: 'Theme',
@@ -363,7 +364,7 @@ class _GeneralSettings extends ConsumerWidget {
                 onTap: () => _showThemePicker(context, ref),
               ),
               Divider(color: colors.border, height: 1, indent: 56),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.language_rounded,
                 iconColor: const Color(0xFF4DAAFC),
                 title: 'Language',
@@ -433,50 +434,7 @@ class _GeneralSettings extends ConsumerWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.onTap,
-    this.trailing,
-  });
 
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final VoidCallback onTap;
-  final String? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.novuColors;
-    final textTheme = Theme.of(context).textTheme;
-    return ListTile(
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: iconColor, size: 20),
-      ),
-      title: Text(title, style: textTheme.bodyLarge),
-      trailing: trailing != null
-          ? Text(
-              trailing!,
-              style: textTheme.bodySmall?.copyWith(color: colors.textSecondary),
-            )
-          : Icon(
-              Icons.chevron_right_rounded,
-              color: colors.textMuted,
-              size: 22,
-            ),
-      onTap: onTap,
-    );
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // 5. MANAGE CATEGORIES

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:table_calendar/table_calendar.dart' show isSameDay;
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -44,13 +45,10 @@ class HomeScreen extends ConsumerWidget {
               child: _FilterChips(categoryAsync: categoryAsync),
             ),
 
-            // ── 4. Section Header ────────────────
-            const SliverToBoxAdapter(child: _ListHeader()),
+            // ── 4. Task List (grouped by morning/afternoon/evening) ──
+            ..._buildGroupedTaskSlivers(context, ref, taskAsync, categoryAsync),
 
-            // ── 5. Task List ─────────────────────
-            _TaskListSliver(taskAsync: taskAsync, categoryAsync: categoryAsync),
-
-            // ── 6. Bottom padding (FAB overlap) ──
+            // ── 5. Bottom padding (FAB overlap) ──
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
@@ -264,16 +262,35 @@ class _FilterChips extends ConsumerWidget {
 
   final AsyncValue<List<CategoryEntity>> categoryAsync;
 
+  String _formatShortDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.novuColors;
     final activeFilter = ref.watch(activeFilterProvider);
+    final selectedDate = ref.watch(selectedDateProvider);
+    final isToday = isSameDay(selectedDate, DateTime.now());
     final categories = categoryAsync.valueOrNull ?? [];
 
-    // Build chip list: "All" + "Today" + dynamic categories
-    final chips = <_ChipData>[
+    // Build chip list: Date chip + "All" + dynamic categories
+    final categoryChips = <_ChipData>[
       _ChipData(id: null, label: 'All'),
-      _ChipData(id: '__today__', label: 'Today'),
       ...categories.map((c) => _ChipData(id: c.id, label: c.name)),
     ];
 
@@ -284,10 +301,51 @@ class _FilterChips extends ConsumerWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          itemCount: chips.length,
+          itemCount: categoryChips.length + 1, // +1 for date chip
           separatorBuilder: (context, i) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
-            final chip = chips[index];
+            // Index 0 = date chip
+            if (index == 0) {
+              return GestureDetector(
+                onTap: () {
+                  // Tapping resets to today
+                  ref
+                      .read(selectedDateProvider.notifier)
+                      .setDate(DateTime.now());
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary, width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: colors.textPrimary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isToday ? 'Today' : _formatShortDate(selectedDate),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Category chips (offset by 1)
+            final chip = categoryChips[index - 1];
             final isSelected = activeFilter == chip.id;
 
             return GestureDetector(
@@ -333,132 +391,160 @@ class _ChipData {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 4. LIST HEADER
+// 4. SECTION HEADER
 // ═══════════════════════════════════════════════════════════════
 
-class _ListHeader extends StatelessWidget {
-  const _ListHeader();
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-      child: Text(
-        'UPCOMING TASKS',
-        style: Theme.of(context).textTheme.labelSmall,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Text(title, style: Theme.of(context).textTheme.labelSmall),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 5. TASK LIST (Sliver)
+// 5. GROUPED TASK SLIVERS (Morning / Afternoon / Evening)
 // ═══════════════════════════════════════════════════════════════
 
-class _TaskListSliver extends ConsumerWidget {
-  const _TaskListSliver({required this.taskAsync, required this.categoryAsync});
+const _slotSections = [
+  (slot: TimeOfDaySlot.morning, title: 'MORNING'),
+  (slot: TimeOfDaySlot.afternoon, title: 'AFTERNOON'),
+  (slot: TimeOfDaySlot.evening, title: 'EVENING'),
+];
 
-  final AsyncValue<List<TaskEntity>> taskAsync;
-  final AsyncValue<List<CategoryEntity>> categoryAsync;
+List<Widget> _buildGroupedTaskSlivers(
+  BuildContext context,
+  WidgetRef ref,
+  AsyncValue<List<TaskEntity>> taskAsync,
+  AsyncValue<List<CategoryEntity>> categoryAsync,
+) {
+  final activeFilter = ref.watch(activeFilterProvider);
+  final selectedDate = ref.watch(selectedDateProvider);
+  final categories = categoryAsync.valueOrNull ?? [];
+  final categoryMap = {for (final c in categories) c.id: c};
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final activeFilter = ref.watch(activeFilterProvider);
-    final categories = categoryAsync.valueOrNull ?? [];
+  return taskAsync.when(
+    data: (tasks) {
+      // 1. Exclude archived
+      var filtered = tasks
+          .where((t) => t.status != TaskStatus.archived)
+          .toList();
 
-    // Build a lookup map for category by ID
-    final categoryMap = {for (final c in categories) c.id: c};
-
-    return taskAsync.when(
-      data: (tasks) {
-        // Apply filter
-        var filtered = tasks
-            .where((t) => t.status != TaskStatus.archived)
-            .toList();
-
-        if (activeFilter == '__today__') {
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-          filtered = filtered.where((t) {
-            if (t.dueDate == null) {
-              // Show today's tasks (created today or no specific date)
-              return true;
-            }
-            final due = DateTime(
-              t.dueDate!.year,
-              t.dueDate!.month,
-              t.dueDate!.day,
-            );
-            return due.isAtSameMomentAs(today) || due.isBefore(today);
-          }).toList();
-        } else if (activeFilter != null) {
-          filtered = filtered
-              .where((t) => t.categoryId == activeFilter)
-              .toList();
+      // 2. Filter by selected date
+      filtered = filtered.where((t) {
+        if (t.dueDate == null) {
+          return isSameDay(selectedDate, DateTime.now());
         }
+        return isSameDay(t.dueDate!, selectedDate);
+      }).toList();
 
-        // Sort: pending first, then completed
-        filtered.sort((a, b) {
-          if (a.status == TaskStatus.completed &&
-              b.status != TaskStatus.completed) {
-            return 1;
-          }
-          if (a.status != TaskStatus.completed &&
-              b.status == TaskStatus.completed) {
-            return -1;
-          }
-          return 0;
-        });
+      // 3. Apply category filter on top
+      if (activeFilter != null) {
+        filtered = filtered.where((t) => t.categoryId == activeFilter).toList();
+      }
 
-        if (filtered.isEmpty) {
-          return SliverToBoxAdapter(
+      // Sort within each group
+      filtered.sort((a, b) {
+        final aCompleted = a.status == TaskStatus.completed;
+        final bCompleted = b.status == TaskStatus.completed;
+        if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+
+        final slotCompare = a.timeOfDay.index.compareTo(b.timeOfDay.index);
+        if (slotCompare != 0) return slotCompare;
+
+        if (a.dueTime != null && b.dueTime != null) {
+          final aMinutes = a.dueTime!.hour * 60 + a.dueTime!.minute;
+          final bMinutes = b.dueTime!.hour * 60 + b.dueTime!.minute;
+          return aMinutes.compareTo(bMinutes);
+        }
+        if (a.dueTime != null) return -1;
+        if (b.dueTime != null) return 1;
+
+        return a.createdAt.compareTo(b.createdAt);
+      });
+
+      if (filtered.isEmpty) {
+        return [
+          SliverToBoxAdapter(
             child: _EmptyState(hasFilter: activeFilter != null),
-          );
-        }
+          ),
+        ];
+      }
 
-        return SliverList.builder(
-          itemCount: filtered.length,
-          itemBuilder: (context, index) {
-            final task = filtered[index];
-            final category = task.categoryId != null
-                ? categoryMap[task.categoryId!]
-                : null;
+      // Group by timeOfDay slot
+      final grouped = <TimeOfDaySlot, List<TaskEntity>>{};
+      for (final task in filtered) {
+        grouped.putIfAbsent(task.timeOfDay, () => []).add(task);
+      }
 
-            return TaskCard(
-              task: task,
-              category: category,
-              onToggleStatus: () {
-                ref
-                    .read(taskListNotifierProvider.notifier)
-                    .completeTask(task.id);
-              },
-              onArchive: () {
-                ref
-                    .read(taskListNotifierProvider.notifier)
-                    .archiveTask(task.id);
-              },
-              onDelete: () {
-                ref.read(taskListNotifierProvider.notifier).deleteTask(task.id);
-              },
-              onTap: () {
-                context.pushNamed(
-                  RouteNames.taskView,
-                  pathParameters: {'id': task.id},
-                );
-              },
-            );
-          },
+      final slivers = <Widget>[];
+      for (final section in _slotSections) {
+        final slotTasks = grouped[section.slot];
+        if (slotTasks == null || slotTasks.isEmpty) continue;
+
+        // Section header
+        slivers.add(
+          SliverToBoxAdapter(child: _SectionHeader(title: section.title)),
         );
-      },
-      loading: () => SliverToBoxAdapter(child: _SkeletonLoader()),
-      error: (err, _) => SliverToBoxAdapter(
+
+        // Task cards for this slot
+        slivers.add(
+          SliverList.builder(
+            itemCount: slotTasks.length,
+            itemBuilder: (context, index) {
+              final task = slotTasks[index];
+              final category = task.categoryId != null
+                  ? categoryMap[task.categoryId!]
+                  : null;
+
+              return TaskCard(
+                task: task,
+                category: category,
+                onToggleStatus: () {
+                  ref
+                      .read(taskListNotifierProvider.notifier)
+                      .completeTask(task.id);
+                },
+                onArchive: () {
+                  ref
+                      .read(taskListNotifierProvider.notifier)
+                      .archiveTask(task.id);
+                },
+                onDelete: () {
+                  ref
+                      .read(taskListNotifierProvider.notifier)
+                      .deleteTask(task.id);
+                },
+                onTap: () {
+                  context.pushNamed(
+                    RouteNames.taskView,
+                    pathParameters: {'id': task.id},
+                  );
+                },
+              );
+            },
+          ),
+        );
+      }
+
+      return slivers;
+    },
+    loading: () => [SliverToBoxAdapter(child: _SkeletonLoader())],
+    error: (err, _) => [
+      SliverToBoxAdapter(
         child: _ErrorWidget(
           message: err.toString(),
           onRetry: () => ref.invalidate(taskListNotifierProvider),
         ),
       ),
-    );
-  }
+    ],
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════

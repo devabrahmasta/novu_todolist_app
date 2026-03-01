@@ -164,14 +164,8 @@ class _CardBody extends StatelessWidget {
           children: [
             // ── Checkbox + Title Row ──
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _Checkbox(
-                  isCompleted: isCompleted,
-                  isOverdue: isOverdue,
-                  onTap: onToggleStatus,
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +193,12 @@ class _CardBody extends StatelessWidget {
                     ],
                   ),
                 ),
+                _Checkbox(
+                  isCompleted: isCompleted,
+                  isOverdue: isOverdue,
+                  onTap: onToggleStatus,
+                ),
+                const SizedBox(width: 12),
                 // Priority indicator
                 if (task.priority != null) ...[
                   const SizedBox(width: 8),
@@ -273,27 +273,22 @@ class _SubtitleRow extends StatelessWidget {
   final bool isOverdue;
 
   String _formatTimeText() {
-    if (task.dueDate == null) {
-      return task.timeOfDay.name[0].toUpperCase() +
-          task.timeOfDay.name.substring(1);
+    // If task has a specific due time, show it in 24h format
+    if (task.dueTime != null) {
+      final h = task.dueTime!.hour.toString().padLeft(2, '0');
+      final m = task.dueTime!.minute.toString().padLeft(2, '0');
+      return '$h:$m';
     }
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final due = DateTime(
-      task.dueDate!.year,
-      task.dueDate!.month,
-      task.dueDate!.day,
-    );
-    final diff = due.difference(today).inDays;
-
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Tomorrow';
-    if (diff == -1) return 'Yesterday';
-    if (diff < -1) {
-      return '${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}';
+    // Otherwise show the slot's default time range
+    switch (task.timeOfDay) {
+      case TimeOfDaySlot.morning:
+        return '06:00 – 12:00';
+      case TimeOfDaySlot.afternoon:
+        return '12:00 – 17:00';
+      case TimeOfDaySlot.evening:
+        return '17:00 – 00:00';
     }
-    return '${task.dueDate!.day}/${task.dueDate!.month}';
   }
 
   IconData _categoryIcon(String? iconName) {
