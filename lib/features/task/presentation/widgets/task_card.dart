@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../domain/entities/task_entity.dart';
 import '../../../category/domain/entities/category_entity.dart';
@@ -45,14 +46,12 @@ class TaskCard extends StatelessWidget {
     ).isBefore(DateTime(today.year, today.month, today.day));
   }
 
-  Color get _borderColor {
-    if (_isOverdue) return AppColors.error;
-    return AppColors.border;
-  }
-
   // ─── Build ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final borderColor = _isOverdue ? AppColors.error : colors.border;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Slidable(
@@ -64,8 +63,8 @@ class TaskCard extends StatelessWidget {
             CustomSlidableAction(
               padding: EdgeInsets.zero,
               onPressed: (_) => onArchive(),
-              backgroundColor: AppColors.surface2,
-              foregroundColor: AppColors.textSecondary,
+              backgroundColor: colors.surface2,
+              foregroundColor: colors.textSecondary,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
@@ -76,7 +75,10 @@ class TaskCard extends StatelessWidget {
                   Flexible(child: const Icon(Icons.archive_outlined, size: 22)),
                   const SizedBox(height: 4),
                   Flexible(
-                    child: Text('Archive', style: AppTextStyles.bodySmall),
+                    child: Text(
+                      'Archive',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),
@@ -97,9 +99,9 @@ class TaskCard extends StatelessWidget {
                   Flexible(
                     child: Text(
                       'Delete',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.error,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.error),
                     ),
                   ),
                 ],
@@ -112,7 +114,7 @@ class TaskCard extends StatelessWidget {
           category: category,
           isCompleted: _isCompleted,
           isOverdue: _isOverdue,
-          borderColor: _borderColor,
+          borderColor: borderColor,
           onToggleStatus: onToggleStatus,
           onTap: onTap,
         ),
@@ -146,11 +148,13 @@ class _CardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor, width: 1),
         ),
@@ -176,12 +180,12 @@ class _CardBody extends StatelessWidget {
                       Text(
                         task.title,
                         style: isCompleted
-                            ? AppTextStyles.bodyLarge.copyWith(
+                            ? textTheme.bodyLarge?.copyWith(
                                 decoration: TextDecoration.lineThrough,
-                                color: AppColors.textSecondary,
-                                decorationColor: AppColors.textSecondary,
+                                color: colors.textSecondary,
+                                decorationColor: colors.textSecondary,
                               )
-                            : AppTextStyles.bodyLarge,
+                            : textTheme.bodyLarge,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -228,6 +232,7 @@ class _Checkbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -243,7 +248,7 @@ class _Checkbox extends StatelessWidget {
                 ? AppColors.primary
                 : isOverdue
                 ? AppColors.error
-                : AppColors.textMuted,
+                : colors.textMuted,
             width: 2,
           ),
         ),
@@ -310,10 +315,11 @@ class _SubtitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     final timeText = _formatTimeText();
     final categoryColor = category != null
         ? Color(int.parse(category!.colorHex, radix: 16))
-        : AppColors.textMuted;
+        : colors.textMuted;
 
     return Row(
       children: [
@@ -332,16 +338,14 @@ class _SubtitleRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Text(
               '•',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: colors.textMuted),
             ),
           ),
         ],
         Text(
           timeText,
           style: AppTextStyles.monoSmall.copyWith(
-            color: isOverdue ? AppColors.error : AppColors.textSecondary,
+            color: isOverdue ? AppColors.error : colors.textSecondary,
           ),
         ),
       ],
@@ -385,6 +389,7 @@ class _SubtaskProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     final completed = subtasks.where((s) => s.isCompleted).length;
     final total = subtasks.length;
     final progress = total > 0 ? completed / total : 0.0;
@@ -397,7 +402,7 @@ class _SubtaskProgressBar extends StatelessWidget {
             Text(
               '$completed/$total',
               style: AppTextStyles.monoSmall.copyWith(
-                color: AppColors.textMuted,
+                color: colors.textMuted,
                 fontSize: 10,
               ),
             ),
@@ -409,7 +414,7 @@ class _SubtaskProgressBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 3,
-            backgroundColor: AppColors.border,
+            backgroundColor: colors.border,
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ),

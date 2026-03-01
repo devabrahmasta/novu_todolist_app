@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/providers/category_providers.dart';
@@ -15,19 +16,21 @@ import '../providers/settings_providers.dart';
 ///
 /// Entirely scrollable via [SingleChildScrollView] to prevent overflow
 /// on smaller devices.
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+class ProfileScreen extends ConsumerWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: colors.bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         centerTitle: true,
-        title: Text('My Profile', style: AppTextStyles.headingMedium),
+        title: Text('My Profile', style: textTheme.headlineMedium),
         actions: [
           IconButton(
             onPressed: () {},
@@ -76,6 +79,8 @@ class _AvatarSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Column(
         children: [
@@ -93,7 +98,7 @@ class _AvatarSection extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.bg, width: 2.5),
+                    border: Border.all(color: colors.bg, width: 2.5),
                   ),
                   child: const Icon(
                     Icons.camera_alt_rounded,
@@ -109,7 +114,7 @@ class _AvatarSection extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Alex Johnson', style: AppTextStyles.headingLarge),
+              Text('Alex Johnson', style: textTheme.headlineLarge),
               const SizedBox(width: 6),
               const Icon(Icons.verified, color: Color(0xFF4DAAFC), size: 20),
             ],
@@ -119,13 +124,13 @@ class _AvatarSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.surface2,
+              color: colors.surface2,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               'LEVEL 5 • Task Master',
               style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textSecondary,
+                color: colors.textSecondary,
                 letterSpacing: 0.5,
               ),
             ),
@@ -143,17 +148,18 @@ class _GradientAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     return CustomPaint(
       painter: _GradientRingPainter(strokeWidth: 3),
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: CircleAvatar(
           radius: radius,
-          backgroundColor: AppColors.surface2,
+          backgroundColor: colors.surface2,
           child: Icon(
             Icons.person_rounded,
             size: radius * 0.9,
-            color: AppColors.textMuted,
+            color: colors.textMuted,
           ),
         ),
       ),
@@ -273,10 +279,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -291,12 +299,16 @@ class _StatCard extends StatelessWidget {
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 10),
-          Text(value, style: AppTextStyles.headingLarge.copyWith(fontSize: 24)),
+          Text(
+            value,
+            style: (textTheme.headlineLarge ?? AppTextStyles.headingLarge)
+                .copyWith(fontSize: 24),
+          ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+            style: (textTheme.bodySmall ?? AppTextStyles.bodySmall).copyWith(
+              color: colors.textSecondary,
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
@@ -314,6 +326,8 @@ class _StatCard extends StatelessWidget {
 class _GeneralSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     final settings = ref.watch(settingsNotifierProvider);
     final themeName = settings.themeMode == ThemeMode.dark
         ? 'Dark'
@@ -324,11 +338,11 @@ class _GeneralSettings extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('General', style: AppTextStyles.headingMedium),
+        Text('General', style: textTheme.headlineMedium),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(20),
           ),
           clipBehavior: Clip.antiAlias,
@@ -340,7 +354,7 @@ class _GeneralSettings extends ConsumerWidget {
                 title: 'Notifications',
                 onTap: () {},
               ),
-              Divider(color: AppColors.border, height: 1, indent: 56),
+              Divider(color: colors.border, height: 1, indent: 56),
               _SettingsTile(
                 icon: Icons.palette_outlined,
                 iconColor: AppColors.primary,
@@ -348,7 +362,7 @@ class _GeneralSettings extends ConsumerWidget {
                 trailing: '$themeName >',
                 onTap: () => _showThemePicker(context, ref),
               ),
-              Divider(color: AppColors.border, height: 1, indent: 56),
+              Divider(color: colors.border, height: 1, indent: 56),
               _SettingsTile(
                 icon: Icons.language_rounded,
                 iconColor: const Color(0xFF4DAAFC),
@@ -363,9 +377,11 @@ class _GeneralSettings extends ConsumerWidget {
   }
 
   void _showThemePicker(BuildContext context, WidgetRef ref) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -376,7 +392,7 @@ class _GeneralSettings extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 16),
-              Text('Select Theme', style: AppTextStyles.headingMedium),
+              Text('Select Theme', style: textTheme.headlineMedium),
               const SizedBox(height: 8),
               ...[
                 (ThemeMode.system, 'System'),
@@ -390,9 +406,9 @@ class _GeneralSettings extends ConsumerWidget {
                         : t.$1 == ThemeMode.light
                         ? Icons.light_mode_rounded
                         : Icons.brightness_auto_rounded,
-                    color: AppColors.textSecondary,
+                    color: colors.textSecondary,
                   ),
-                  title: Text(t.$2, style: AppTextStyles.bodyLarge),
+                  title: Text(t.$2, style: textTheme.bodyLarge),
                   trailing: current == t.$1
                       ? const Icon(
                           Icons.check,
@@ -434,6 +450,8 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return ListTile(
       leading: Container(
         width: 36,
@@ -444,17 +462,15 @@ class _SettingsTile extends StatelessWidget {
         ),
         child: Icon(icon, color: iconColor, size: 20),
       ),
-      title: Text(title, style: AppTextStyles.bodyLarge),
+      title: Text(title, style: textTheme.bodyLarge),
       trailing: trailing != null
           ? Text(
               trailing!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: textTheme.bodySmall?.copyWith(color: colors.textSecondary),
             )
-          : const Icon(
+          : Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.textMuted,
+              color: colors.textMuted,
               size: 22,
             ),
       onTap: onTap,
@@ -469,6 +485,7 @@ class _SettingsTile extends StatelessWidget {
 class _ManageCategories extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textTheme = Theme.of(context).textTheme;
     final categoryAsync = ref.watch(categoryListNotifierProvider);
     final categories = categoryAsync.valueOrNull ?? [];
 
@@ -478,16 +495,17 @@ class _ManageCategories extends ConsumerWidget {
         // Header
         Row(
           children: [
-            Text('Manage Categories', style: AppTextStyles.headingMedium),
+            Text('Manage Categories', style: textTheme.headlineMedium),
             const Spacer(),
             GestureDetector(
               onTap: () {},
               child: Text(
                 'Edit',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: (textTheme.bodySmall ?? AppTextStyles.bodySmall)
+                    .copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
           ],
@@ -554,7 +572,10 @@ class _CategoryItem extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             category.name,
-            style: AppTextStyles.bodySmall.copyWith(fontSize: 12),
+            style:
+                (Theme.of(context).textTheme.bodySmall ??
+                        AppTextStyles.bodySmall)
+                    .copyWith(fontSize: 12),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -568,6 +589,7 @@ class _CategoryItem extends StatelessWidget {
 class _AddCategoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     return SizedBox(
       width: 72,
       child: Column(
@@ -578,24 +600,20 @@ class _AddCategoryItem extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: AppColors.textMuted,
+                color: colors.textMuted,
                 width: 1.5,
                 strokeAlign: BorderSide.strokeAlignInside,
               ),
             ),
-            child: const Icon(
-              Icons.add_rounded,
-              color: AppColors.textMuted,
-              size: 26,
-            ),
+            child: Icon(Icons.add_rounded, color: colors.textMuted, size: 26),
           ),
           const SizedBox(height: 8),
           Text(
             'Add',
-            style: AppTextStyles.bodySmall.copyWith(
-              fontSize: 12,
-              color: AppColors.textMuted,
-            ),
+            style:
+                (Theme.of(context).textTheme.bodySmall ??
+                        AppTextStyles.bodySmall)
+                    .copyWith(fontSize: 12, color: colors.textMuted),
           ),
         ],
       ),
@@ -617,7 +635,9 @@ class _SignOutButton extends StatelessWidget {
         onPressed: () {},
         child: Text(
           'Sign Out',
-          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.error),
+          style:
+              (Theme.of(context).textTheme.bodyLarge ?? AppTextStyles.bodyLarge)
+                  .copyWith(color: AppColors.error),
         ),
       ),
     );

@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/providers/category_providers.dart';
 import '../../domain/entities/task_entity.dart';
 import '../providers/task_providers.dart';
-import '../widgets/create_task_bottom_sheet.dart';
 import '../widgets/task_card.dart';
 
 /// Home Screen Dashboard — the main entry point of Novu.
@@ -27,7 +27,7 @@ class HomeScreen extends ConsumerWidget {
     final categoryAsync = ref.watch(categoryListNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.novuColors.bg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -55,13 +55,6 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-      floatingActionButton: _HomeFAB(
-        onPressed: () {
-          showCreateTaskSheet(context);
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const _BottomNavBar(),
     );
   }
 }
@@ -110,6 +103,8 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Row(
@@ -120,9 +115,9 @@ class _HomeHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${_greeting()} ☀️', style: AppTextStyles.headingLarge),
+                Text('${_greeting()} ☀️', style: textTheme.headlineLarge),
                 const SizedBox(height: 4),
-                Text(_formattedDate(), style: AppTextStyles.bodySmall),
+                Text(_formattedDate(), style: textTheme.bodySmall),
               ],
             ),
           ),
@@ -130,13 +125,13 @@ class _HomeHeader extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.surface2,
+            decoration: BoxDecoration(
+              color: colors.surface2,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_none_rounded,
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
               size: 22,
             ),
           ),
@@ -157,6 +152,8 @@ class _ProgressSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     final tasks = taskAsync.valueOrNull ?? [];
     final total = tasks.where((t) => t.status != TaskStatus.archived).length;
     final completed = tasks
@@ -170,9 +167,9 @@ class _ProgressSummaryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border, width: 1),
+          border: Border.all(color: colors.border, width: 1),
         ),
         child: Row(
           children: [
@@ -183,12 +180,12 @@ class _ProgressSummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     _motivationalText(progress),
-                    style: AppTextStyles.headingMedium,
+                    style: textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$completed of $total tasks done',
-                    style: AppTextStyles.bodySmall,
+                    style: textTheme.bodySmall,
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -197,7 +194,7 @@ class _ProgressSummaryCard extends StatelessWidget {
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textPrimary,
+                        foregroundColor: colors.textPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -206,8 +203,8 @@ class _ProgressSummaryCard extends StatelessWidget {
                       ),
                       child: Text(
                         'View Report',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textPrimary,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -227,7 +224,7 @@ class _ProgressSummaryCard extends StatelessWidget {
                   CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 8,
-                    backgroundColor: AppColors.border,
+                    backgroundColor: colors.border,
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.primary,
                     ),
@@ -236,7 +233,7 @@ class _ProgressSummaryCard extends StatelessWidget {
                   Center(
                     child: Text(
                       '$percent%',
-                      style: AppTextStyles.bodyLarge.copyWith(
+                      style: textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -269,6 +266,7 @@ class _FilterChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.novuColors;
     final activeFilter = ref.watch(activeFilterProvider);
     final categories = categoryAsync.valueOrNull ?? [];
 
@@ -303,10 +301,10 @@ class _FilterChips extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : AppColors.surface,
+                  color: isSelected ? AppColors.primary : colors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.border,
+                    color: isSelected ? AppColors.primary : colors.border,
                     width: 1,
                   ),
                 ),
@@ -314,8 +312,8 @@ class _FilterChips extends ConsumerWidget {
                   chip.label,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isSelected
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
+                        ? colors.textPrimary
+                        : colors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -345,7 +343,10 @@ class _ListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-      child: Text('UPCOMING TASKS', style: AppTextStyles.labelSmall),
+      child: Text(
+        'UPCOMING TASKS',
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
     );
   }
 }
@@ -471,29 +472,29 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 60),
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.check_circle_outline_rounded,
               size: 48,
-              color: AppColors.textMuted,
+              color: colors.textMuted,
             ),
             const SizedBox(height: 16),
             Text(
               hasFilter ? 'No tasks in this filter' : 'No tasks yet',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: textTheme.bodyLarge?.copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: 4),
             Text(
               hasFilter
                   ? 'Try a different filter or create a new task'
                   : 'Tap + to create your first task',
-              style: AppTextStyles.bodySmall,
+              style: textTheme.bodySmall,
             ),
           ],
         ),
@@ -505,6 +506,7 @@ class _EmptyState extends StatelessWidget {
 class _SkeletonLoader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -515,9 +517,9 @@ class _SkeletonLoader extends StatelessWidget {
             child: Container(
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border, width: 1),
+                border: Border.all(color: colors.border, width: 1),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -529,7 +531,7 @@ class _SkeletonLoader extends StatelessWidget {
                       height: 24,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.surface2,
+                        color: colors.surface2,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -542,7 +544,7 @@ class _SkeletonLoader extends StatelessWidget {
                             height: 14,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: AppColors.surface2,
+                              color: colors.surface2,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -551,7 +553,7 @@ class _SkeletonLoader extends StatelessWidget {
                             height: 10,
                             width: 120,
                             decoration: BoxDecoration(
-                              color: AppColors.surface2,
+                              color: colors.surface2,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -577,6 +579,8 @@ class _ErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 32),
@@ -590,14 +594,12 @@ class _ErrorWidget extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Oops, something went wrong',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: textTheme.bodyLarge?.copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: 4),
             Text(
               message,
-              style: AppTextStyles.bodySmall,
+              style: textTheme.bodySmall,
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -606,142 +608,8 @@ class _ErrorWidget extends StatelessWidget {
             TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 18),
-              label: Text('Retry', style: AppTextStyles.bodySmall),
+              label: Text('Retry', style: textTheme.bodySmall),
               style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// FAB
-// ═══════════════════════════════════════════════════════════════
-
-class _HomeFAB extends StatelessWidget {
-  const _HomeFAB({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 58,
-      height: 58,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// BOTTOM NAV BAR
-// ═══════════════════════════════════════════════════════════════
-
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgElevated,
-        border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.check_circle_outline_rounded,
-                label: 'Tasks',
-                isActive: true,
-                onTap: () {},
-              ),
-              _NavItem(
-                icon: Icons.calendar_today_rounded,
-                label: 'Calendar',
-                onTap: () => context.pushNamed(RouteNames.calendar),
-              ),
-              // Center space for FAB
-              const SizedBox(width: 58),
-              _NavItem(
-                icon: Icons.folder_outlined,
-                label: 'Projects',
-                onTap: () {},
-              ),
-              _NavItem(
-                icon: Icons.settings_outlined,
-                label: 'Settings',
-                onTap: () => context.pushNamed(RouteNames.settings),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isActive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? AppColors.primary : AppColors.textMuted;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 56,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                fontSize: 10,
-                color: color,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              ),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../../category/domain/entities/category_entity.dart';
 import '../../../task/domain/entities/task_entity.dart';
@@ -27,6 +28,8 @@ class ScheduleTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     final catColor = category != null
         ? Color(int.parse(category!.colorHex, radix: 16))
         : AppColors.primary;
@@ -35,7 +38,7 @@ class ScheduleTaskCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface2,
+        color: colors.surface2,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -52,12 +55,12 @@ class ScheduleTaskCard extends StatelessWidget {
                 Text(
                   task.title,
                   style: _isCompleted
-                      ? AppTextStyles.bodyLarge.copyWith(
+                      ? textTheme.bodyLarge?.copyWith(
                           decoration: TextDecoration.lineThrough,
-                          color: AppColors.textSecondary,
-                          decorationColor: AppColors.textSecondary,
+                          color: colors.textSecondary,
+                          decorationColor: colors.textSecondary,
                         )
-                      : AppTextStyles.bodyLarge,
+                      : textTheme.bodyLarge,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -65,16 +68,16 @@ class ScheduleTaskCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.access_time_rounded,
                         size: 13,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         task.dueTime!.format(context),
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colors.textSecondary,
                           letterSpacing: 0,
                         ),
                       ),
@@ -97,7 +100,7 @@ class ScheduleTaskCard extends StatelessWidget {
                 color: _isCompleted ? AppColors.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
                 border: Border.all(
-                  color: _isCompleted ? AppColors.primary : AppColors.textMuted,
+                  color: _isCompleted ? AppColors.primary : colors.textMuted,
                   width: 2,
                 ),
               ),

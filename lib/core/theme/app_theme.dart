@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_text_styles.dart';
+import 'novu_colors_extension.dart';
 
 /// Novu theme data — dark-first with basic light variant.
 class AppTheme {
@@ -70,6 +71,7 @@ class AppTheme {
       foregroundColor: AppColors.textPrimary,
     ),
     dividerTheme: const DividerThemeData(color: AppColors.border, thickness: 1),
+    extensions: const [NovuColors.dark],
   );
 
   // ─── Light Theme (basic, can be refined later) ───────
@@ -155,5 +157,6 @@ class AppTheme {
       color: AppColors.lightBorder,
       thickness: 1,
     ),
+    extensions: const [NovuColors.light],
   );
 }

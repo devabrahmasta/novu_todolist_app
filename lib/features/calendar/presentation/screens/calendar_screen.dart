@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../../category/domain/entities/category_entity.dart';
 import '../../../category/presentation/providers/category_providers.dart';
@@ -75,7 +76,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final categoryMap = {for (final c in categories) c.id: c};
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.novuColors.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -128,26 +129,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 class _CalendarAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).maybePop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.menu_rounded,
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
               size: 24,
             ),
           ),
           const Spacer(),
-          Text('Calendar', style: AppTextStyles.headingMedium),
+          Text('Calendar', style: Theme.of(context).textTheme.headlineMedium),
           const Spacer(),
           IconButton(
             onPressed: () {},
-            icon: const Icon(
+            icon: Icon(
               Icons.notifications_none_rounded,
-              color: AppColors.textSecondary,
+              color: colors.textSecondary,
               size: 24,
             ),
           ),
@@ -182,6 +184,8 @@ class _CalendarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TableCalendar<TaskEntity>(
@@ -208,21 +212,22 @@ class _CalendarWidget extends StatelessWidget {
           titleCentered: true,
           formatButtonVisible: true,
           formatButtonDecoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: colors.border),
             borderRadius: BorderRadius.circular(12),
           ),
           formatButtonTextStyle: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
           ),
-          titleTextStyle: AppTextStyles.headingMedium,
-          leftChevronIcon: const Icon(
+          titleTextStyle:
+              textTheme.headlineMedium ?? AppTextStyles.headingMedium,
+          leftChevronIcon: Icon(
             Icons.chevron_left_rounded,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             size: 28,
           ),
-          rightChevronIcon: const Icon(
+          rightChevronIcon: Icon(
             Icons.chevron_right_rounded,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             size: 28,
           ),
           headerPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -231,11 +236,11 @@ class _CalendarWidget extends StatelessWidget {
         // ── Days of week style ──
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             fontSize: 12,
           ),
           weekendStyle: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textMuted,
+            color: colors.textMuted,
             fontSize: 12,
           ),
         ),
@@ -245,10 +250,10 @@ class _CalendarWidget extends StatelessWidget {
           outsideDaysVisible: false,
           // Default text
           defaultTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
           ),
           weekendTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
           ),
           // Today
           todayDecoration: BoxDecoration(
@@ -265,7 +270,7 @@ class _CalendarWidget extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           selectedTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w700,
           ),
           // Markers (event dots)
@@ -335,10 +340,12 @@ class _SchedulePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(32),
           topRight: Radius.circular(32),
         ),
@@ -351,7 +358,7 @@ class _SchedulePanel extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: colors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -366,12 +373,12 @@ class _SchedulePanel extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Schedule', style: AppTextStyles.headingLarge),
+                      Text('Schedule', style: textTheme.headlineLarge),
                       const SizedBox(height: 2),
                       Text(
                         _formatSelectedDate(),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -382,8 +389,8 @@ class _SchedulePanel extends StatelessWidget {
                   child: Container(
                     width: 40,
                     height: 40,
-                    decoration: const BoxDecoration(
-                      color: AppColors.surface2,
+                    decoration: BoxDecoration(
+                      color: colors.surface2,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -430,26 +437,26 @@ class _SchedulePanel extends StatelessWidget {
 class _EmptySchedule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = context.novuColors;
+    final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.event_available_rounded,
               size: 44,
-              color: AppColors.textMuted,
+              color: colors.textMuted,
             ),
             const SizedBox(height: 12),
             Text(
               'No tasks for this day',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: textTheme.bodyLarge?.copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: 4),
-            Text('Enjoy your free time!', style: AppTextStyles.bodySmall),
+            Text('Enjoy your free time!', style: textTheme.bodySmall),
           ],
         ),
       ),
