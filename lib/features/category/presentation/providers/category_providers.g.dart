@@ -78,6 +78,158 @@ final deleteCategoryUsecaseProvider =
 
 typedef DeleteCategoryUsecaseRef
     = AutoDisposeProviderRef<DeleteCategoryUsecase>;
+String _$categoryDetailFutureHash() =>
+    r'551fec285b0974ef9bea27e2f8bf114e44b51561';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// See also [categoryDetailFuture].
+@ProviderFor(categoryDetailFuture)
+const categoryDetailFutureProvider = CategoryDetailFutureFamily();
+
+/// See also [categoryDetailFuture].
+class CategoryDetailFutureFamily extends Family<AsyncValue<CategoryEntity?>> {
+  /// See also [categoryDetailFuture].
+  const CategoryDetailFutureFamily();
+
+  /// See also [categoryDetailFuture].
+  CategoryDetailFutureProvider call(
+    String? id,
+  ) {
+    return CategoryDetailFutureProvider(
+      id,
+    );
+  }
+
+  @override
+  CategoryDetailFutureProvider getProviderOverride(
+    covariant CategoryDetailFutureProvider provider,
+  ) {
+    return call(
+      provider.id,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'categoryDetailFutureProvider';
+}
+
+/// See also [categoryDetailFuture].
+class CategoryDetailFutureProvider
+    extends AutoDisposeFutureProvider<CategoryEntity?> {
+  /// See also [categoryDetailFuture].
+  CategoryDetailFutureProvider(
+    String? id,
+  ) : this._internal(
+          (ref) => categoryDetailFuture(
+            ref as CategoryDetailFutureRef,
+            id,
+          ),
+          from: categoryDetailFutureProvider,
+          name: r'categoryDetailFutureProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$categoryDetailFutureHash,
+          dependencies: CategoryDetailFutureFamily._dependencies,
+          allTransitiveDependencies:
+              CategoryDetailFutureFamily._allTransitiveDependencies,
+          id: id,
+        );
+
+  CategoryDetailFutureProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String? id;
+
+  @override
+  Override overrideWith(
+    FutureOr<CategoryEntity?> Function(CategoryDetailFutureRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: CategoryDetailFutureProvider._internal(
+        (ref) => create(ref as CategoryDetailFutureRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<CategoryEntity?> createElement() {
+    return _CategoryDetailFutureProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CategoryDetailFutureProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin CategoryDetailFutureRef on AutoDisposeFutureProviderRef<CategoryEntity?> {
+  /// The parameter `id` of this provider.
+  String? get id;
+}
+
+class _CategoryDetailFutureProviderElement
+    extends AutoDisposeFutureProviderElement<CategoryEntity?>
+    with CategoryDetailFutureRef {
+  _CategoryDetailFutureProviderElement(super.provider);
+
+  @override
+  String? get id => (origin as CategoryDetailFutureProvider).id;
+}
+
 String _$categoryListNotifierHash() =>
     r'3b06f6c6c91f7a3c462ee6ca063d82f7b089a892';
 

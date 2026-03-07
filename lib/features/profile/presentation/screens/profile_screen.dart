@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:novu_todolist_app/features/profile/presentation/widgets/settings_tiles.dart';
@@ -85,26 +83,41 @@ class _AvatarSection extends StatelessWidget {
     return Center(
       child: Column(
         children: [
-          // ── Gradient-bordered avatar ──
+          // ── Monochrome bordered avatar ──
           Stack(
             children: [
-              _GradientAvatar(radius: 50),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.textPrimary, width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: colors.surface2,
+                  child: Icon(
+                    Icons.person_outline_rounded,
+                    size: 45,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
               // Camera badge
               Positioned(
-                bottom: 2,
-                right: 2,
+                bottom: 4,
+                right: 4,
                 child: Container(
-                  width: 28,
-                  height: 28,
+                  width: 26,
+                  height: 26,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: colors.textPrimary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: colors.bg, width: 2.5),
+                    border: Border.all(color: colors.bg, width: 2),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt_rounded,
                     size: 14,
-                    color: Colors.white,
+                    color: colors.bg,
                   ),
                 ),
               ),
@@ -115,86 +128,25 @@ class _AvatarSection extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Alex Johnson', style: textTheme.headlineLarge),
-              const SizedBox(width: 6),
-              const Icon(Icons.verified, color: Color(0xFF4DAAFC), size: 20),
+              Text(
+                'Alex Johnson',
+                style: textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.verified_rounded, color: colors.textPrimary, size: 20),
             ],
           ),
-          const SizedBox(height: 8),
-          // ── Level badge ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: colors.surface2,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'LEVEL 5 • Task Master',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: colors.textSecondary,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
+          // Note: Level badge removed as per out-of-scope rules
         ],
       ),
     );
   }
 }
 
-/// Avatar with a gradient ring border (Violet → Pink/Orange).
-class _GradientAvatar extends StatelessWidget {
-  const _GradientAvatar({required this.radius});
-  final double radius;
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.novuColors;
-    return CustomPaint(
-      painter: _GradientRingPainter(strokeWidth: 3),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: CircleAvatar(
-          radius: radius,
-          backgroundColor: colors.surface2,
-          child: Icon(
-            Icons.person_rounded,
-            size: radius * 0.9,
-            color: colors.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GradientRingPainter extends CustomPainter {
-  _GradientRingPainter({required this.strokeWidth});
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final paint = Paint()
-      ..shader = const SweepGradient(
-        colors: [
-          Color(0xFFB87EED), // violet
-          Color(0xFFFF6B9D), // pink
-          Color(0xFFFF9A3C), // orange
-          Color(0xFFB87EED), // loop back
-        ],
-        stops: [0, 0.35, 0.7, 1.0],
-        transform: GradientRotation(-math.pi / 2),
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawOval(rect.deflate(strokeWidth / 2), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// Removed _GradientAvatar and _GradientRingPainter as per monochrome rules
 
 // ═══════════════════════════════════════════════════════════════
 // 3. STATS GRID
@@ -230,31 +182,32 @@ class _StatsGrid extends ConsumerWidget {
       (max, t) => t.streak > max ? t.streak : max,
     );
 
+    final colors = context.novuColors;
     return IntrinsicHeight(
       child: Row(
         children: [
           Expanded(
             child: _StatCard(
               icon: Icons.check_circle_outline_rounded,
-              color: const Color(0xFF4DAAFC),
+              color: colors.textPrimary,
               value: '$totalTasks',
               label: 'Total Tasks',
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
               icon: Icons.calendar_today_rounded,
-              color: const Color(0xFF34D399),
+              color: colors.textPrimary,
               value: '$thisWeek',
               label: 'This Week',
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              icon: Icons.local_fire_department_rounded,
-              color: const Color(0xFFFF9A3C),
+              icon: Icons.local_fire_department_outlined,
+              color: colors.textPrimary,
               value: '$bestStreak',
               label: 'Day Streak',
             ),
@@ -283,10 +236,11 @@ class _StatCard extends StatelessWidget {
     final colors = context.novuColors;
     final textTheme = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border, width: 1),
       ),
       child: Column(
         children: [
@@ -294,22 +248,25 @@ class _StatCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: colors.surface2,
+              shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: (textTheme.headlineLarge ?? AppTextStyles.headingLarge)
-                .copyWith(fontSize: 24),
+            style: textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+            ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: (textTheme.bodySmall ?? AppTextStyles.bodySmall).copyWith(
+            style: textTheme.bodySmall?.copyWith(
               color: colors.textSecondary,
+              fontWeight: FontWeight.w500,
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
@@ -351,14 +308,14 @@ class _GeneralSettings extends ConsumerWidget {
             children: [
               SettingsTile(
                 icon: Icons.notifications_none_rounded,
-                iconColor: const Color(0xFFFFD166),
+                iconColor: colors.textPrimary,
                 title: 'Notifications',
                 onTap: () {},
               ),
               Divider(color: colors.border, height: 1, indent: 56),
               SettingsTile(
                 icon: Icons.palette_outlined,
-                iconColor: AppColors.primary,
+                iconColor: colors.textPrimary,
                 title: 'Theme',
                 trailing: '$themeName >',
                 onTap: () => _showThemePicker(context, ref),
@@ -366,7 +323,7 @@ class _GeneralSettings extends ConsumerWidget {
               Divider(color: colors.border, height: 1, indent: 56),
               SettingsTile(
                 icon: Icons.language_rounded,
-                iconColor: const Color(0xFF4DAAFC),
+                iconColor: colors.textPrimary,
                 title: 'Language',
                 onTap: () {},
               ),

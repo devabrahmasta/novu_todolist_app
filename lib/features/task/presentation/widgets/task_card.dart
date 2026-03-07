@@ -274,21 +274,23 @@ class _SubtitleRow extends StatelessWidget {
 
   String _formatTimeText() {
     // If task has a specific due time, show it in 24h format
-    if (task.dueTime != null) {
-      final h = task.dueTime!.hour.toString().padLeft(2, '0');
-      final m = task.dueTime!.minute.toString().padLeft(2, '0');
+    if (task.dueDate != null) {
+      final h = task.dueDate!.hour.toString().padLeft(2, '0');
+      final m = task.dueDate!.minute.toString().padLeft(2, '0');
       return '$h:$m';
     }
 
-    // Otherwise show the slot's default time range
-    switch (task.timeOfDay) {
-      case TimeOfDaySlot.morning:
-        return '06:00 – 12:00';
-      case TimeOfDaySlot.afternoon:
-        return '12:00 – 17:00';
-      case TimeOfDaySlot.evening:
-        return '17:00 – 00:00';
-    }
+    return 'No due time';
+
+    // // Otherwise show the slot's default time range
+    // switch (task.timeOfDay) {
+    //   case TimeOfDaySlot.morning:
+    //     return '06:00 – 12:00';
+    //   case TimeOfDaySlot.afternoon:
+    //     return '12:00 – 17:00';
+    //   case TimeOfDaySlot.evening:
+    //     return '17:00 – 00:00';
+    // }
   }
 
   IconData _categoryIcon(String? iconName) {

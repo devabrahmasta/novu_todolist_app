@@ -7,11 +7,7 @@ import '../../../../core/utils/enums.dart';
 import '../../../category/domain/entities/category_entity.dart';
 import '../../../task/domain/entities/task_entity.dart';
 
-/// Schedule-specific task card for the Calendar view.
-///
-/// - Left: category squircle icon
-/// - Center: title + time
-/// - Right: rounded checkbox
+/// Schedule-specific task card matching the Novu Phase 8 mockup.
 class ScheduleTaskCard extends StatelessWidget {
   const ScheduleTaskCard({
     super.key,
@@ -26,6 +22,15 @@ class ScheduleTaskCard extends StatelessWidget {
 
   bool get _isCompleted => task.status == TaskStatus.completed;
 
+  String _formatTimeRange(BuildContext context) {
+    if (task.dueTime == null) return '';
+    final start = task.dueTime!;
+    
+    // As per mockup, if we only have dueTime we assume duration or just show start time
+    // For MVP, we'll format the start time.
+    return start.format(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.novuColors;
@@ -35,17 +40,29 @@ class ScheduleTaskCard extends StatelessWidget {
         : AppColors.primary;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: colors.surface2,
-        borderRadius: BorderRadius.circular(16),
+        color: colors.surface2, // Light rounded container
+        borderRadius: BorderRadius.circular(20), // Mockup shows very rounded corners
       ),
       child: Row(
         children: [
           // ── Left: category squircle ──
-          _CategorySquircle(color: catColor, iconName: category?.iconName),
-          const SizedBox(width: 14),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: catColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              _resolveIcon(category?.iconName),
+              color: catColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 16),
 
           // ── Center: title + time ──
           Expanded(
@@ -54,13 +71,11 @@ class ScheduleTaskCard extends StatelessWidget {
               children: [
                 Text(
                   task.title,
-                  style: _isCompleted
-                      ? textTheme.bodyLarge?.copyWith(
-                          decoration: TextDecoration.lineThrough,
-                          color: colors.textSecondary,
-                          decorationColor: colors.textSecondary,
-                        )
-                      : textTheme.bodyLarge,
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: _isCompleted ? colors.textSecondary : colors.textPrimary,
+                    decoration: _isCompleted ? TextDecoration.lineThrough : null,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -70,15 +85,15 @@ class ScheduleTaskCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.access_time_rounded,
-                        size: 13,
-                        color: colors.textSecondary,
+                        size: 14,
+                        color: colors.textMuted,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        task.dueTime!.format(context),
+                        _formatTimeRange(context),
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: colors.textSecondary,
-                          letterSpacing: 0,
+                          color: colors.textMuted,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -89,23 +104,23 @@ class ScheduleTaskCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // ── Right: rounded checkbox ──
+          // ── Right: Square checkbox ──
           GestureDetector(
             onTap: onToggle,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 26,
-              height: 26,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
-                color: _isCompleted ? AppColors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
+                color: _isCompleted ? colors.textPrimary : Colors.transparent,
+                borderRadius: BorderRadius.circular(6), // Square but slightly rounded corners
                 border: Border.all(
-                  color: _isCompleted ? AppColors.primary : colors.textMuted,
-                  width: 2,
+                  color: _isCompleted ? colors.textPrimary : colors.border,
+                  width: 1.5,
                 ),
               ),
               child: _isCompleted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  ? Icon(Icons.check_rounded, size: 16, color: colors.bg)
                   : null,
             ),
           ),
@@ -113,43 +128,27 @@ class ScheduleTaskCard extends StatelessWidget {
       ),
     );
   }
-}
 
-// ─── Category squircle icon ──────────────────────────────────
-
-class _CategorySquircle extends StatelessWidget {
-  const _CategorySquircle({required this.color, this.iconName});
-
-  final Color color;
-  final String? iconName;
-
-  IconData _resolveIcon() {
+  IconData _resolveIcon(String? iconName) {
+    if (iconName == null) return Icons.star_border_rounded;
+    // Simple icon mapping matching mockup style (line art padding)
     switch (iconName) {
       case 'work':
-        return Icons.work_outlined;
-      case 'person':
-        return Icons.person_outlined;
+        return Icons.work_outline_rounded;
+      case 'design':
+      case 'palette':
+        return Icons.palette_outlined;
+      case 'people':
+      case 'sync':
+        return Icons.people_outline_rounded;
       case 'fitness':
-        return Icons.fitness_center_outlined;
-      case 'school':
-        return Icons.school_outlined;
-      case 'home':
-        return Icons.home_outlined;
+      case 'gym':
+        return Icons.fitness_center_rounded;
+      case 'reading':
+      case 'book':
+        return Icons.book_outlined;
       default:
         return Icons.category_outlined;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(_resolveIcon(), color: color, size: 22),
-    );
   }
 }

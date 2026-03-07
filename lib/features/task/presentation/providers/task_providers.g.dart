@@ -326,6 +326,135 @@ class _TaskAnalyticsProviderElement
   String get taskId => (origin as TaskAnalyticsProvider).taskId;
 }
 
+String _$taskDetailFutureHash() => r'e336212686ee9485ac318d2bab734afcc23a48df';
+
+/// See also [taskDetailFuture].
+@ProviderFor(taskDetailFuture)
+const taskDetailFutureProvider = TaskDetailFutureFamily();
+
+/// See also [taskDetailFuture].
+class TaskDetailFutureFamily extends Family<AsyncValue<TaskEntity?>> {
+  /// See also [taskDetailFuture].
+  const TaskDetailFutureFamily();
+
+  /// See also [taskDetailFuture].
+  TaskDetailFutureProvider call(
+    String id,
+  ) {
+    return TaskDetailFutureProvider(
+      id,
+    );
+  }
+
+  @override
+  TaskDetailFutureProvider getProviderOverride(
+    covariant TaskDetailFutureProvider provider,
+  ) {
+    return call(
+      provider.id,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'taskDetailFutureProvider';
+}
+
+/// See also [taskDetailFuture].
+class TaskDetailFutureProvider extends AutoDisposeFutureProvider<TaskEntity?> {
+  /// See also [taskDetailFuture].
+  TaskDetailFutureProvider(
+    String id,
+  ) : this._internal(
+          (ref) => taskDetailFuture(
+            ref as TaskDetailFutureRef,
+            id,
+          ),
+          from: taskDetailFutureProvider,
+          name: r'taskDetailFutureProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$taskDetailFutureHash,
+          dependencies: TaskDetailFutureFamily._dependencies,
+          allTransitiveDependencies:
+              TaskDetailFutureFamily._allTransitiveDependencies,
+          id: id,
+        );
+
+  TaskDetailFutureProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    FutureOr<TaskEntity?> Function(TaskDetailFutureRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: TaskDetailFutureProvider._internal(
+        (ref) => create(ref as TaskDetailFutureRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<TaskEntity?> createElement() {
+    return _TaskDetailFutureProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TaskDetailFutureProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+mixin TaskDetailFutureRef on AutoDisposeFutureProviderRef<TaskEntity?> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _TaskDetailFutureProviderElement
+    extends AutoDisposeFutureProviderElement<TaskEntity?>
+    with TaskDetailFutureRef {
+  _TaskDetailFutureProviderElement(super.provider);
+
+  @override
+  String get id => (origin as TaskDetailFutureProvider).id;
+}
+
 String _$selectedDateHash() => r'3982fe7971ba889f3becfd78002706fd37d2d77c';
 
 /// See also [SelectedDate].

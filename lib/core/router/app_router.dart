@@ -2,12 +2,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
-import '../../features/projects/presentation/screens/projects_placeholder_screen.dart';
+import '../../features/journal/presentation/screens/journal_screen.dart';
 import '../../features/task/presentation/screens/create_task_screen.dart';
 import '../../features/task/presentation/screens/edit_task_screen.dart';
 import '../../features/task/presentation/screens/home_screen.dart';
 import '../../features/task/presentation/screens/task_view_screen.dart';
-import '../../features/task/presentation/screens/onboarding_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../di/injection.dart';
 import '../utils/settings_service.dart';
 import 'main_shell.dart';
@@ -62,9 +62,9 @@ GoRouter createRouter() {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/projects',
-                name: RouteNames.projects,
-                builder: (_, __) => const ProjectsPlaceholderScreen(),
+                path: '/journal',
+                name: RouteNames.journal,
+                builder: (_, __) => const JournalScreen(),
               ),
             ],
           ),

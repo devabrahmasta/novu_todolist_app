@@ -141,3 +141,11 @@ Future<TaskAnalytics> taskAnalytics(TaskAnalyticsRef ref, String taskId) async {
     ),
   );
 }
+
+// ─── Task Future provider ────────────────────────────
+
+@riverpod
+Future<TaskEntity?> taskDetailFuture(TaskDetailFutureRef ref, String id) async {
+  final result = await ref.watch(getTaskByIdUsecaseProvider).call(id);
+  return result.getOrElse((_) => throw Exception('Failed to get task detail'));
+}

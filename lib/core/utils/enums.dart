@@ -15,3 +15,15 @@ enum TaskStatus { pending, completed, archived }
 
 /// Repeat / recurrence type for a task.
 enum RepeatType { none, daily, weekly, monthly, custom }
+
+/// Type of habit tracking.
+enum HabitType { yesNo, measurable }
+
+/// Status of a habit goal / challenge.
+enum HabitGoalStatus { active, completed, archived, abandoned }
+
+/// Measurable habit target direction.
+enum MeasurableTarget { atLeast, atMost }
+
+/// Universal priority level (shared by tasks and habits).
+enum Priority { low, medium, high }

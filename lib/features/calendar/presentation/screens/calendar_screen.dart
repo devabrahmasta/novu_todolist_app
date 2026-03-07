@@ -2,20 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/novu_colors_extension.dart';
 import '../../../../core/utils/enums.dart';
 import '../../../category/presentation/providers/category_providers.dart';
-import '../../../task/domain/entities/task_entity.dart';
 import '../../../task/presentation/providers/task_providers.dart';
-import '../../../task/presentation/widgets/create_task_bottom_sheet.dart';
 import '../widgets/schedule_task_card.dart';
 
-/// Calendar Screen — month/week collapsible calendar + schedule panel.
-///
-/// Uses [TableCalendar] for native month↔week toggling and
-/// [selectedDateProvider] for cross-screen date sync.
+/// Calendar Screen matching Phase 8 mockup.
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -37,9 +31,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _onSheetChanged() {
     if (!_sheetController.isAttached) return;
     final size = _sheetController.size;
-    if (size > 0.58 && _calendarFormat == CalendarFormat.month) {
+    
+    // Switch to week view when pushing sheet up, month when pulling down
+    if (size > 0.65 && _calendarFormat == CalendarFormat.month) {
       setState(() => _calendarFormat = CalendarFormat.week);
-    } else if (size < 0.48 && _calendarFormat == CalendarFormat.week) {
+    } else if (size < 0.55 && _calendarFormat == CalendarFormat.week) {
       setState(() => _calendarFormat = CalendarFormat.month);
     }
   }
@@ -51,33 +47,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.dispose();
   }
 
-  String _formatSelectedDate(DateTime date) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.novuColors;
@@ -87,19 +56,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final allTasks = taskAsync.valueOrNull ?? [];
 
-    // Event map for dot markers
-    final eventMap = <DateTime, List<TaskEntity>>{};
-    for (final task in allTasks) {
-      if (task.dueDate != null && task.status != TaskStatus.archived) {
-        final key = DateTime(
-          task.dueDate!.year,
-          task.dueDate!.month,
-          task.dueDate!.day,
-        );
-        eventMap.putIfAbsent(key, () => []).add(task);
-      }
-    }
-
     // Filter tasks for selected date
     final tasksForDate = allTasks.where((t) {
       if (t.status == TaskStatus.archived) return false;
@@ -107,13 +63,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       return isSameDay(t.dueDate!, selectedDay);
     }).toList();
 
-    // Sort: completed→bottom, then timeOfDay slot, then dueTime, then createdAt
+    // Sort
     tasksForDate.sort((a, b) {
       final aCompleted = a.status == TaskStatus.completed;
       final bCompleted = b.status == TaskStatus.completed;
       if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+      
       final slotCompare = a.timeOfDay.index.compareTo(b.timeOfDay.index);
       if (slotCompare != 0) return slotCompare;
+      
       if (a.dueTime != null && b.dueTime != null) {
         final aMin = a.dueTime!.hour * 60 + a.dueTime!.minute;
         final bMin = b.dueTime!.hour * 60 + b.dueTime!.minute;
@@ -121,6 +79,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
       if (a.dueTime != null) return -1;
       if (b.dueTime != null) return 1;
+      
       return a.createdAt.compareTo(b.createdAt);
     });
 
@@ -131,12 +90,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       backgroundColor: colors.bg,
       body: Stack(
         children: [
-          // ── BACKGROUND: AppBar + Calendar ──
+          // ── BACKGROUND: Calendar Section ──
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _CalendarAppBar(),
+                const SizedBox(height: 16),
+                // "Schedule" header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Schedule',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Calendar widget
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -144,7 +117,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     focusedDay: _focusedDay,
                     selectedDay: selectedDay,
                     calendarFormat: _calendarFormat,
-                    eventMap: eventMap,
                     onDaySelected: (selected, focused) {
                       ref.read(selectedDateProvider.notifier).setDate(selected);
                       setState(() => _focusedDay = focused);
@@ -164,21 +136,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           // ── FOREGROUND: Draggable Schedule Panel ──
           DraggableScrollableSheet(
             controller: _sheetController,
-            initialChildSize: 0.50,
-            minChildSize: 0.28,
-            maxChildSize: 0.92,
+            initialChildSize: 0.48, // Initial overlap below calendar
+            minChildSize: 0.40,
+            maxChildSize: 0.85, // Pulls up more than half screen
             snap: true,
-            snapSizes: const [0.28, 0.50, 0.92],
+            snapSizes: const [0.48, 0.85],
             builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(28),
+                    top: Radius.circular(32),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, -4),
                     ),
@@ -188,70 +160,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   children: [
                     // Drag handle
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Container(
-                        width: 40,
+                        width: 48,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: colors.border,
+                          color: colors.textPrimary,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
 
-                    // Schedule header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Schedule',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineLarge,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _formatSelectedDate(selectedDay),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: colors.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => showCreateTaskSheet(context),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: colors.surface2,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                color: AppColors.primary,
-                                size: 22,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Task list — uses scrollController from DraggableScrollableSheet
+                    // Task list
                     Expanded(
                       child: tasksForDate.isEmpty
                           ? _EmptySchedule()
                           : ListView.builder(
                               controller: scrollController,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 100), // padding bottom for fab clearance
                               itemCount: tasksForDate.length,
                               itemBuilder: (context, index) {
                                 final task = tasksForDate[index];
@@ -280,43 +206,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// APP BAR
-// ═══════════════════════════════════════════════════════════════
-
-class _CalendarAppBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.novuColors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.of(context).maybePop(),
-            icon: Icon(
-              Icons.menu_rounded,
-              color: colors.textSecondary,
-              size: 24,
-            ),
-          ),
-          const Spacer(),
-          Text('Calendar', style: Theme.of(context).textTheme.headlineMedium),
-          const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_none_rounded,
-              color: colors.textSecondary,
-              size: 24,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 // COLLAPSIBLE CALENDAR
 // ═══════════════════════════════════════════════════════════════
 
@@ -325,7 +214,6 @@ class _CalendarWidget extends StatelessWidget {
     required this.focusedDay,
     required this.selectedDay,
     required this.calendarFormat,
-    required this.eventMap,
     required this.onDaySelected,
     required this.onFormatChanged,
     required this.onPageChanged,
@@ -334,7 +222,6 @@ class _CalendarWidget extends StatelessWidget {
   final DateTime focusedDay;
   final DateTime selectedDay;
   final CalendarFormat calendarFormat;
-  final Map<DateTime, List<TaskEntity>> eventMap;
   final void Function(DateTime selected, DateTime focused) onDaySelected;
   final ValueChanged<CalendarFormat> onFormatChanged;
   final ValueChanged<DateTime> onPageChanged;
@@ -342,10 +229,9 @@ class _CalendarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.novuColors;
-    final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: TableCalendar<TaskEntity>(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: TableCalendar(
         firstDay: DateTime.utc(2020, 1, 1),
         lastDay: DateTime.utc(2030, 12, 31),
         focusedDay: focusedDay,
@@ -353,12 +239,8 @@ class _CalendarWidget extends StatelessWidget {
         calendarFormat: calendarFormat,
         startingDayOfWeek: StartingDayOfWeek.sunday,
         availableCalendarFormats: const {
-          CalendarFormat.month: 'Week',
-          CalendarFormat.week: 'Month',
-        },
-        eventLoader: (day) {
-          final key = DateTime(day.year, day.month, day.day);
-          return eventMap[key] ?? [];
+          CalendarFormat.month: 'Month',
+          CalendarFormat.week: 'Week',
         },
         onDaySelected: onDaySelected,
         onFormatChanged: onFormatChanged,
@@ -368,81 +250,107 @@ class _CalendarWidget extends StatelessWidget {
         headerStyle: HeaderStyle(
           titleCentered: true,
           formatButtonVisible: false,
-          formatButtonDecoration: BoxDecoration(
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(12),
+          titleTextStyle: AppTextStyles.headingMedium.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
           ),
-          formatButtonTextStyle: AppTextStyles.bodySmall.copyWith(
-            color: colors.textSecondary,
-          ),
-          titleTextStyle:
-              textTheme.headlineMedium ?? AppTextStyles.headingMedium,
           leftChevronIcon: Icon(
             Icons.chevron_left_rounded,
             color: colors.textSecondary,
-            size: 28,
+            size: 24,
           ),
           rightChevronIcon: Icon(
             Icons.chevron_right_rounded,
             color: colors.textSecondary,
-            size: 28,
+            size: 24,
           ),
           headerPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
 
         // ── Days of week style ──
         daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: AppTextStyles.bodySmall.copyWith(
+          dowTextFormatter: (date, locale) {
+            // "S", "M", "T"
+            return const ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.weekday % 7];
+          },
+          weekdayStyle: AppTextStyles.bodyMedium.copyWith(
             color: colors.textSecondary,
-            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
-          weekendStyle: AppTextStyles.bodySmall.copyWith(
-            color: colors.textMuted,
-            fontSize: 12,
+          weekendStyle: AppTextStyles.bodyMedium.copyWith(
+            color: colors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
         ),
 
         // ── Calendar style ──
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
-          // Default text
+          
           defaultTextStyle: AppTextStyles.bodyMedium.copyWith(
             color: colors.textPrimary,
           ),
           weekendTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: colors.textSecondary,
+            color: colors.textPrimary, // Non-muted in mockup
           ),
-          // Today
-          todayDecoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.primary, width: 1.5),
+          
+          // Today (black dot under text)
+          todayDecoration: const BoxDecoration(
+            color: Colors.transparent,
           ),
           todayTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.primary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
-          // Selected
-          selectedDecoration: const BoxDecoration(
-            color: AppColors.primary,
+
+          // Selected (Solid black circle, white text, drop shadow)
+          selectedDecoration: BoxDecoration(
+            color: colors.textPrimary,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: colors.textPrimary.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           selectedTextStyle: AppTextStyles.bodyMedium.copyWith(
-            color: colors.textPrimary,
+            color: colors.bg,
             fontWeight: FontWeight.w700,
           ),
-          // Markers (event dots)
-          markersMaxCount: 1,
-          markerDecoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
-          ),
-          markerSize: 5,
-          markerMargin: const EdgeInsets.only(top: 1),
         ),
 
-        // ── Row height ──
-        rowHeight: 46,
-        daysOfWeekHeight: 28,
+        // Use calendar layout builders to draw dots under "today/selected" if needed.
+        // The mockup shows tiny dots under some active dates.
+        calendarBuilders: CalendarBuilders(
+          // Marker builder for dots under days
+          markerBuilder: (context, date, events) {
+            final isToday = isSameDay(date, DateTime.now());
+            // Mockup shows dots under certain dates (e.g. today).
+            if (isToday) {
+              return Positioned(
+                bottom: 8,
+                child: Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isSameDay(date, selectedDay) 
+                       ? colors.bg 
+                       : colors.textPrimary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              );
+            }
+            return null;
+          },
+        ),
+
+        rowHeight: 52,
+        daysOfWeekHeight: 32,
       ),
     );
   }
@@ -457,22 +365,29 @@ class _EmptySchedule extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32),
+        padding: const EdgeInsets.symmetric(vertical: 40),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.event_available_rounded,
-              size: 44,
+              size: 48,
               color: colors.textMuted,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               'No tasks for this day',
-              style: textTheme.bodyLarge?.copyWith(color: colors.textSecondary),
+              style: textTheme.bodyLarge?.copyWith(
+                color: colors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 4),
-            Text('Enjoy your free time!', style: textTheme.bodySmall),
+            Text(
+              'Enjoy your free time!',
+              style: textTheme.bodySmall?.copyWith(
+                color: colors.textMuted,
+              ),
+            ),
           ],
         ),
       ),

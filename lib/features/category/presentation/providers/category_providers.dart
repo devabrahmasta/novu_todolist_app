@@ -65,3 +65,20 @@ class CategoryListNotifier extends _$CategoryListNotifier {
     );
   }
 }
+
+// ─── Category Detail Future provider ─────────────────────
+
+@riverpod
+Future<CategoryEntity?> categoryDetailFuture(
+  CategoryDetailFutureRef ref,
+  String? id,
+) async {
+  if (id == null) return null;
+  final categories = await ref.watch(categoryListNotifierProvider.future);
+  try {
+    return categories.firstWhere((c) => c.id == id);
+  } catch (_) {
+    return null;
+  }
+}
+
